@@ -1,0 +1,46 @@
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+
+universities = ['Arkansas State University', 'Brigham Young University Hawaii', 'Brigham Young University Idaho', 'California State Polytechnic University Pomona', 'California State University Chico', 'California State University East Bay', 'California State University Fresno', 'California State University Fullerton', 'California State University Long Beach', 'California State University Los Angeles', 'California State University Northridge', 'California State University San Bernardino', 'Cleveland State University', 'CUNY Bernard M Baruch College', 'CUNY City College', 'CUNY Hunter College', 'CUNY Queens College', 'Fashion Institute of Technology', 'Florida International University', 'Idaho State University', 'Indiana State University', 'Indiana University of Pennsylvania', 'Iowa State University', 'Kansas State University', 'Kent State University at Kent', 'Midwestern State University', 'Minnesota State University Mankato', 'Minnesota State University Moorhead', 'Missouri University of Science and Technology', 'Monroe College', 'New Mexico State University', 'Northern Arizona University', 'Pittsburg State University', 'Portland State University', 'Purdue University Northwest', 'Saginaw Valley State University', 'Saint Cloud State University', 'San Diego State University', 'San Francisco State University', 'San Jose State University', 'State University of New York at New Paltz', 'Stony Brook University', 'SUNY at Albany', 'SUNY at Binghamton', 'SUNY College at Plattsburgh', 'SUNY College of Technology at Canton', 'Tennessee State University', 'Tennessee Technological University', 'Texas Southern University', 'Texas Wesleyan University', 'University of Central Arkansas', 'University of Central Oklahoma', 'University of Houston', 'University of Idaho', 'University of Maryland Baltimore County', 'University of Michigan Flint', 'University of Minnesota Twin Cities', 'University of Missouri Kansas City', 'University of Nebraska Lincoln', 'University of Nebraska at Kearney', 'University of North Dakota', 'University of Northern Iowa', 'University of Oklahoma Norman', 'University of South Alabama', 'University of South Florida', 'University of Texas at El Paso', 'University of Toledo', 'University of West Florida', 'West Virginia University', 'Western Kentucky University', 'Wichita State University', 'Wright State University']
+
+results = []
+errors = []
+
+for uni in universities:
+    url = f'https://www.collegedata.com/college-search/{uni.replace(" ", "-")}'
+    response = requests.get(url)
+    soup = BeautifulSoup(response.content, 'html.parser')
+    
+    # Find the Cost of Attendance section
+    cost_section = soup.findAll("div", class_="CollegeProfileContent_content__1hJCl")
+
+    try:
+        # Find the in-state and out-of-state Tuition and Fees if line No.25
+        in_state_cost = cost_section[25].find(string="Tuition and Fees").find_next(class_="TitleValue_value__1JT0d").text
+
+        if in_state_cost[0:2] == "In":
+            out_of_state_cost = cost_section[25].find(class_="TitleValue_value__1JT0d").find_next(class_="TitleValue_value__1JT0d").text
+            results.append({'University': uni, 'In-state Tuition and Fees': in_state_cost, 'Out-of-state Tuition and Fees': out_of_state_cost})
+    
+        else:
+            results.append({'University': uni, 'Tuition and Fees': in_state_cost})
+            
+    except:
+        try:
+            # Find the in-state and out-of-state Tuition and Fees if line No.23
+            in_state_cost = cost_section[23].find(string="Tuition and Fees").find_next(class_="TitleValue_value__1JT0d").text
+
+            if in_state_cost[0:2] == "In":
+                out_of_state_cost = cost_section[23].find(class_="TitleValue_value__1JT0d").find_next(class_="TitleValue_value__1JT0d").text
+                results.append({'University': uni, 'In-state Tuition and Fees': in_state_cost, 'Out-of-state Tuition and Fees': out_of_state_cost})
+    
+            else:
+                results.append({'University': uni, 'Tuition and Fees': in_state_cost})
+                
+        except:
+            errors.append(uni)
+    
+df = pd.DataFrame(results)
+df.to_excel('tuition_and_fees.xlsx', index=False)
+print(errors)
