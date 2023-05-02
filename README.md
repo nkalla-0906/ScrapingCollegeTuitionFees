@@ -1,2 +1,2 @@
 # ScrapingCollegeTuitionFees
-Using BeautifulSoul to create a webscraper 
+Using BeautifulSoup to create a webscraper 
